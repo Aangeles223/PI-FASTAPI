@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, LargeBinary, Text, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, LargeBinary, Text, DateTime, SmallInteger, BigInteger, Date
 from conexion import Base
+from sqlalchemy.dialects.mysql import BIGINT 
 from datetime import datetime
 
+
+#USUARIOS
 class Usuario(Base):
     __tablename__ = "usuario"
     id = Column(Integer, primary_key=True, index=True)
@@ -11,27 +14,34 @@ class Usuario(Base):
     contraseña = Column(String(50), nullable=False)
     fecha_creacion = Column(DateTime, nullable=False)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
+#USUARIOS
 
+
+#STATUS
 class Status(Base):
     __tablename__ = "status"
     id = Column(Integer, primary_key=True)
     nombre = Column(String(45), nullable=False)
+#STATUS
 
+#SECCIONES
 class Seccion(Base):
     __tablename__ = "seccion"
     id_seccion = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(100), nullable=False)
     descripcion = Column(Text)
     fecha_creacion = Column(DateTime, default=datetime.now)
+#SECCIONES
 
-
+#CATEGORIAS
 class Categoria(Base):
     __tablename__ = "categorias"
     id = Column(Integer, primary_key=True)
     nombre = Column(String(45), nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.now)
+#CATEGORIAS
 
-
+# DESARROLLADORES
 class Desarrollador(Base):
     __tablename__ = "desarrollador"
     id_desarrollador = Column(Integer, primary_key=True, autoincrement=True)
@@ -40,8 +50,9 @@ class Desarrollador(Base):
     sitio_web = Column(String(255))
     fecha_registro = Column(DateTime, default=datetime.now)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
+# DESARROLLADORES
 
-
+# APPS
 class App(Base):
     __tablename__ = "app"
     id_app = Column(Integer, primary_key=True, autoincrement=True)
@@ -57,3 +68,85 @@ class App(Base):
     peso = Column(String(45), nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.now)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
+# APPS
+
+
+# APPS CATEGORÍAS
+class AppCategoria(Base):
+    __tablename__ = "app_categorias"
+    app_id_app = Column(Integer, ForeignKey('app.id_app'), primary_key=True)
+    categorias_id = Column(Integer, ForeignKey('categorias.id'), primary_key=True)
+# APPS CATEGORÍAS
+
+
+# APPS SECCIÓN
+class AppSeccion(Base):
+    __tablename__ = "app_seccion"
+
+    id_app = Column(Integer, ForeignKey("app.id_app"), primary_key=True)
+    id_seccion = Column(Integer, ForeignKey('seccion.id_seccion')) 
+    prioridad = Column(SmallInteger)
+# APPS SECCIÓN
+
+
+# APPS DESARROLLADOR
+class AppsDesarrollador(Base):
+    __tablename__ = "apps_desarrollador"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    desarrollador_id_desarrollador = Column(Integer, ForeignKey("desarrollador.id_desarrollador"))
+    app_id_app = Column(Integer, ForeignKey("app.id_app"))
+# APPS DESARROLLADOR
+
+
+# APLICACIONES DESCARGAS
+class Descarga(Base):
+    __tablename__ = "descarga"
+    id_descarga = Column(Integer, primary_key=True, autoincrement=True)
+    id_app = Column(Integer, ForeignKey("app.id_app"))
+    fecha = Column(Date)
+    cantidad = Column(BIGINT(unsigned=True))  
+# APLICACIONES DESCARGAS
+
+
+# MIS APPS
+class MisApp(Base):
+    __tablename__ = "mis_apps"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    app_id_app = Column(Integer, ForeignKey("app.id_app"))
+    usuario_id = Column(Integer, ForeignKey("usuario.id"))
+# MIS APPS
+
+# NOTIFICACIONES
+class Notificacion(Base):
+    __tablename__ = "notificaciones"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    descripcion = Column(String(100))
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    usuario_id = Column(Integer, ForeignKey("usuario.id"))
+    status_id = Column(Integer, ForeignKey("status.id"))
+# NOTIFICACIONES
+
+
+# VALORACIONES
+class Valoracion(Base):
+    __tablename__ = "valoracion"
+    id_valoracion = Column(Integer, primary_key=True, autoincrement=True)
+    id_app = Column(Integer, ForeignKey("app.id_app"))
+    puntuacion = Column(SmallInteger, nullable=False)  # Para tinyint unsigned
+    comentario = Column(Text)
+    fecha = Column(DateTime, default=datetime.utcnow)
+    usuario_id = Column(Integer, ForeignKey("usuario.id"))
+# VALORACIONES
+
+
+# VERSIONES DE APPS
+class VersionApp(Base):
+    __tablename__ = "version_app"
+    id_version = Column(Integer, primary_key=True, autoincrement=True)
+    id_app = Column(Integer, ForeignKey("app.id_app"))
+    numero_version = Column(String(20))
+    fecha_lanzamiento = Column(Date)
+    enlace_apk = Column(String(255))
+# VERSIONES DE APPS
