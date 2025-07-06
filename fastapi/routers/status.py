@@ -1,47 +1,51 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Status
-from schemas import StatusPydantic
+from schemas import StatusOut
 
-routerStatus = APIRouter()
+router = APIRouter()
 
-@routerStatus.get("/status", tags=["Status"])
-def obtener_todos(db: Session = Depends(get_db)):
+@router.post("/status", response_model=StatusOut)
+def crear_status(
+    nombre: str = Query(..., min_length=2, max_length=45, description="Nombre del estado"),
+    db: Session = Depends(get_db)
+):
+    nuevo = Status(nombre=nombre)
+    db.add(nuevo); db.commit(); db.refresh(nuevo)
+    return nuevo
+
+@router.get("/status", response_model=list[StatusOut])
+def obtener_status(db: Session = Depends(get_db)):
     return db.query(Status).all()
 
-@routerStatus.get("/status/{id}", tags=["Status"])
-def obtener_por_id(id: int, db: Session = Depends(get_db)):
+@router.get("/status/{id}", response_model=StatusOut)
+def obtener_status_por_id(id: int, db: Session = Depends(get_db)):
     status = db.query(Status).filter(Status.id == id).first()
     if not status:
         raise HTTPException(status_code=404, detail="Status no encontrado")
     return status
 
-@routerStatus.post("/status", tags=["Status"])
-def crear_status(nuevo: StatusPydantic, db: Session = Depends(get_db)):
-    existe = db.query(Status).filter(Status.id == nuevo.id).first()
-    if existe:
-        raise HTTPException(status_code=400, detail="El ID ya existe")
-    nuevo_status = Status(**nuevo.dict())
-    db.add(nuevo_status)
-    db.commit()
-    return {"mensaje": "Status creado exitosamente"}
+@router.put("/status/{id}", response_model=StatusOut)
+def actualizar_status(
+    id: int = Path(..., description="ID del status a actualizar"),
+    nombre: str = Query(..., min_length=2, max_length=45, description="Nuevo nombre del estado"),
+    db: Session = Depends(get_db)
+):
+    status_db = db.query(Status).filter(Status.id == id).first()
+    if not status_db:
+        raise HTTPException(status_code=404, detail="Status no encontrado")
+    status_db.nombre = nombre
+    db.commit(); db.refresh(status_db)
+    return status_db
 
-@routerStatus.put("/status/{id}", tags=["Status"])
-def actualizar_status(id: int, datos: StatusPydantic, db: Session = Depends(get_db)):
+@router.delete("/status/{id}")
+def eliminar_status(
+    id: int = Path(..., description="ID del status a eliminar"),
+    db: Session = Depends(get_db)
+):
     status = db.query(Status).filter(Status.id == id).first()
     if not status:
         raise HTTPException(status_code=404, detail="Status no encontrado")
-    for campo, valor in datos.dict().items():
-        setattr(status, campo, valor)
-    db.commit()
-    return {"mensaje": "Status actualizado correctamente"}
-
-@routerStatus.delete("/status/{id}", tags=["Status"])
-def eliminar_status(id: int, db: Session = Depends(get_db)):
-    status = db.query(Status).filter(Status.id == id).first()
-    if not status:
-        raise HTTPException(status_code=404, detail="Status no encontrado")
-    db.delete(status)
-    db.commit()
-    return {"mensaje": "Status eliminado exitosamente"}
+    db.delete(status); db.commit()
+    return {"mensaje": "Status eliminado correctamente"}

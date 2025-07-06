@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Categoria
-from schemas import CategoriaCreate, CategoriaOut
+from schemas import CategoriaOut
 from datetime import datetime
 
 router = APIRouter()
@@ -19,31 +19,34 @@ def obtener_categoria(id: int, db: Session = Depends(get_db)):
     return categoria
 
 @router.post("/categorias", response_model=CategoriaOut)
-def crear_categoria(categoria: CategoriaCreate, db: Session = Depends(get_db)):
-    nueva = Categoria(
-        nombre=categoria.nombre,
-        fecha_creacion=datetime.now()
-    )
-    db.add(nueva)
-    db.commit()
-    db.refresh(nueva)
+def crear_categoria(
+    nombre: str = Query(..., min_length=2, max_length=45, description="Nombre de la categoría"),
+    db: Session = Depends(get_db)
+):
+    nueva = Categoria(nombre=nombre, fecha_creacion=datetime.now())
+    db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
 
 @router.put("/categorias/{id}", response_model=CategoriaOut)
-def actualizar_categoria(id: int, categoria_update: CategoriaCreate, db: Session = Depends(get_db)):
+def actualizar_categoria(
+    id: int = Path(..., description="ID de la categoría a actualizar"),
+    nombre: str = Query(..., min_length=2, max_length=45, description="Nuevo nombre"),
+    db: Session = Depends(get_db)
+):
     categoria = db.query(Categoria).filter(Categoria.id == id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
-    categoria.nombre = categoria_update.nombre
-    db.commit()
-    db.refresh(categoria)
+    categoria.nombre = nombre
+    db.commit(); db.refresh(categoria)
     return categoria
 
 @router.delete("/categorias/{id}")
-def eliminar_categoria(id: int, db: Session = Depends(get_db)):
+def eliminar_categoria(
+    id: int = Path(..., description="ID de la categoría a eliminar"),
+    db: Session = Depends(get_db)
+):
     categoria = db.query(Categoria).filter(Categoria.id == id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
-    db.delete(categoria)
-    db.commit()
+    db.delete(categoria); db.commit()
     return {"mensaje": "Categoría eliminada correctamente"}

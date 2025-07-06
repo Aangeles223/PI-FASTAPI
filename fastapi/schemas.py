@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, date
 from typing import Optional
 
@@ -7,11 +7,11 @@ from typing import Optional
 # 🧑‍💻 USUARIOS
 # ============================
 class UsuarioCreate(BaseModel):
-    nombre: str
-    correo: EmailStr
-    contraseña: str
-    status_id: int = 1  # Valor por defecto
-    avatar: bytes = b""
+    nombre: str = Field(..., min_length=2, max_length=45, description="Nombre completo del usuario")
+    correo: EmailStr = Field(..., description="Correo electrónico válido")
+    contraseña: str = Field(..., min_length=6, max_length=50, description="Contraseña (mínimo 6 caracteres)")
+    status_id: int = Field(default=1, description="1=Activo, 2=Inactivo, 3=Suspendido")
+    avatar: bytes = Field(default=b"", description="Imagen de perfil (opcional)")
 
 
 class UsuarioOut(BaseModel):
@@ -28,7 +28,11 @@ class UsuarioOut(BaseModel):
 # ============================
 # 📶 STATUS
 # ============================
-class StatusPydantic(BaseModel):
+class StatusCreate(BaseModel):
+    nombre: str = Field(..., min_length=2, max_length=45, description="Nombre del estado")
+
+
+class StatusOut(BaseModel):
     id: int
     nombre: str
 
@@ -40,14 +44,14 @@ class StatusPydantic(BaseModel):
 # 🧭 SECCIONES
 # ============================
 class SeccionCreate(BaseModel):
-    nombre: str
-    descripcion: Optional[str] = None
+    nombre: str = Field(..., min_length=2, max_length=100, description="Nombre de la sección")
+    descripcion: Optional[str] = Field(None, max_length=500, description="Descripción opcional")
 
 
 class SeccionOut(BaseModel):
     id_seccion: int
     nombre: str
-    descripcion: Optional[str] = None
+    descripcion: Optional[str]
     fecha_creacion: datetime
 
     class Config:
@@ -58,7 +62,7 @@ class SeccionOut(BaseModel):
 # 🗂️ CATEGORÍAS
 # ============================
 class CategoriaCreate(BaseModel):
-    nombre: str
+    nombre: str = Field(..., min_length=2, max_length=45, description="Nombre de la categoría")
 
 
 class CategoriaOut(BaseModel):
@@ -74,17 +78,17 @@ class CategoriaOut(BaseModel):
 # 🧑‍💼 DESARROLLADORES
 # ============================
 class DesarrolladorCreate(BaseModel):
-    nombre: str
-    email: EmailStr
-    sitio_web: Optional[str] = None
-    status_id: int
+    nombre: str = Field(..., min_length=2, max_length=150, description="Nombre o empresa del desarrollador")
+    email: EmailStr = Field(..., description="Correo electrónico de contacto")
+    sitio_web: Optional[str] = Field(None, max_length=255, description="URL del sitio web (opcional)")
+    status_id: int = Field(default=1, description="1=Activo, 2=Inactivo, 3=Suspendido")
 
 
 class DesarrolladorOut(BaseModel):
     id_desarrollador: int
     nombre: str
-    email: EmailStr
-    sitio_web: Optional[str] = None
+    email: str
+    sitio_web: Optional[str]
     fecha_registro: datetime
     status_id: int
 
@@ -93,20 +97,20 @@ class DesarrolladorOut(BaseModel):
 
 
 # ============================
-# 📱 APPS
+# 📱 APPS (corregir campo inconsistente)
 # ============================
 class AppCreate(BaseModel):
-    nombre: str
-    precio: str
-    id_desarrollador: int
-    descripcion: str
-    img1: Optional[bytes] = None
-    img2: Optional[bytes] = None
-    img3l: Optional[bytes] = None
-    icono: Optional[bytes] = None
-    rango_edad: str
-    peso: str
-    status_id: int
+    nombre: str = Field(..., min_length=2, max_length=150, description="Nombre de la aplicación")
+    precio: str = Field(..., description="Precio (usar '0' para gratis)")
+    id_desarrollador: int = Field(..., description="ID del desarrollador")  # Cambiar a id_desarrollador
+    descripcion: str = Field(..., min_length=10, description="Descripción de la app")
+    img1: Optional[bytes] = Field(None, description="Primera imagen (opcional)")
+    img2: Optional[bytes] = Field(None, description="Segunda imagen (opcional)")
+    img3l: Optional[bytes] = Field(None, description="Tercera imagen (opcional)")  # Mantener img3l como en BD
+    icono: Optional[bytes] = Field(None, description="Ícono de la app (opcional)")
+    rango_edad: str = Field(..., description="Ej: 3+, 7+, 12+, 17+")
+    peso: str = Field(..., description="Tamaño de la app (Ej: 50MB)")
+    status_id: int = Field(default=1, description="1=Activo, 2=Inactivo, 3=Suspendido")
 
 
 class AppOut(BaseModel):
@@ -115,10 +119,10 @@ class AppOut(BaseModel):
     precio: str
     id_desarrollador: int
     descripcion: str
-    img1: Optional[bytes] = None
-    img2: Optional[bytes] = None
-    img3l: Optional[bytes] = None
-    icono: Optional[bytes] = None
+    img1: Optional[bytes]
+    img2: Optional[bytes]
+    img3l: Optional[bytes]
+    icono: Optional[bytes]
     rango_edad: str
     peso: str
     fecha_creacion: datetime
@@ -132,20 +136,30 @@ class AppOut(BaseModel):
 # 🔗 RELACIÓN APP-CATEGORÍA
 # ============================
 class AppCategoriaCreate(BaseModel):
+    app_id: int = Field(..., description="ID de la aplicación")
+    categoria_id: int = Field(..., description="ID de la categoría")
+
+
+class AppCategoriaOut(BaseModel):
+    id: int
     app_id_app: int
     categorias_id: int
+
+    class Config:
+        from_attributes = True
 
 
 # ============================
 # 🔗 RELACIÓN APP-SECCIÓN
 # ============================
 class AppSeccionCreate(BaseModel):
-    id_app: int
-    id_seccion: int
-    prioridad: int
+    app_id: int = Field(..., description="ID de la aplicación")
+    seccion_id: int = Field(..., description="ID de la sección")
+    prioridad: int = Field(default=0, ge=0, le=10, description="Prioridad 0-10")
 
 
 class AppSeccionOut(BaseModel):
+    id: int
     id_app: int
     id_seccion: int
     prioridad: int
@@ -155,91 +169,151 @@ class AppSeccionOut(BaseModel):
 
 
 # ============================
-# 🔗 RELACIÓN APP-DESARROLLADOR
-# ============================
-class AppsDesarrolladorCreate(BaseModel):
-    desarrollador_id_desarrollador: int
-    app_id_app: int
-
-
-# ============================
-# 📥 DESCARGAS
+# 📥 DESCARGAS (corregir campos)
 # ============================
 class DescargaCreate(BaseModel):
+    id_app: int = Field(..., description="ID de la aplicación")  # Cambiar a id_app
+    fecha: Optional[date] = Field(None, description="Fecha de descarga (auto si se omite)")
+    cantidad: int = Field(default=1, ge=1, description="Número de descargas")
+
+
+class DescargaOut(BaseModel):
+    id_descarga: int
     id_app: int
-    fecha: Optional[date] = None
+    fecha: date
     cantidad: int
 
-
-class DescargaOut(DescargaCreate):
-    id_descarga: int
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============================
-# 📲 MIS APPS (guardadas por el usuario)
+# 📲 MIS APPS (corregir campos)
 # ============================
 class MisAppCreate(BaseModel):
+    app_id_app: int = Field(..., description="ID de la aplicación a guardar")  # Cambiar a app_id_app
+    usuario_id: int = Field(..., description="ID del usuario")
+
+
+class MisAppOut(BaseModel):
+    id: int
     app_id_app: int
     usuario_id: int
 
-
-class MisAppOut(MisAppCreate):
-    id: int
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============================
 # 🔔 NOTIFICACIONES
 # ============================
 class NotificacionCreate(BaseModel):
+    descripcion: str = Field(..., min_length=5, max_length=100, description="Mensaje de la notificación")
+    usuario_id: int = Field(..., description="ID del usuario destinatario")
+    status_id: int = Field(default=1, description="1=Activo, 2=Leída")
+
+
+class NotificacionOut(BaseModel):
+    id: int
     descripcion: str
+    fecha_creacion: datetime
     usuario_id: int
     status_id: int
 
-
-class NotificacionOut(NotificacionCreate):
-    id: int
-    fecha_creacion: datetime
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============================
-# ⭐ VALORACIONES
+# ⭐ VALORACIONES (corregir campos)
 # ============================
 class ValoracionCreate(BaseModel):
+    id_app: int = Field(..., description="ID de la aplicación a valorar")  # Cambiar a id_app
+    puntuacion: int = Field(..., ge=1, le=5, description="Puntuación de 1 a 5 estrellas")
+    comentario: Optional[str] = Field(None, max_length=500, description="Comentario opcional")
+    usuario_id: int = Field(..., description="ID del usuario")
+
+
+class ValoracionOut(BaseModel):
+    id_valoracion: int
     id_app: int
     puntuacion: int
-    comentario: Optional[str] = None
-    fecha: Optional[datetime] = None
+    comentario: Optional[str]
+    fecha: datetime
     usuario_id: int
 
-
-class ValoracionOut(ValoracionCreate):
-    id_valoracion: int
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # ============================
-# 🧾 VERSIONES DE APPS
+# 🧾 VERSIONES DE APPS (corregir campos)
 # ============================
 class VersionAppCreate(BaseModel):
+    id_app: int = Field(..., description="ID de la aplicación")  # Cambiar a id_app
+    numero_version: str = Field(..., description="Ej: 1.0.0, 2.1.3")
+    fecha_lanzamiento: date = Field(..., description="Fecha de lanzamiento")
+    enlace_apk: str = Field(..., description="URL del archivo APK")
+
+
+class VersionAppOut(BaseModel):
+    id_version: int
     id_app: int
     numero_version: str
     fecha_lanzamiento: date
     enlace_apk: str
 
+    class Config:
+        from_attributes = True
 
-class VersionAppOut(VersionAppCreate):
-    id_version: int
+
+# ============================
+# 🛠️ OTRAS RELACIONES Y ACCIONES
+# ============================
+# APPS DESARROLLADOR
+class AppsDesarrolladorCreate(BaseModel):
+    desarrollador_id: int = Field(..., description="ID del desarrollador")
+    app_id: int = Field(..., description="ID de la aplicación")
+
+
+class AppsDesarrolladorOut(BaseModel):
+    id: int
+    desarrollador_id_desarrollador: int
+    app_id_app: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+# ============================
+# 🔍 BÚSQUEDA
+# ============================
+class BusquedaRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=100, description="Término de búsqueda")
+    categoria_id: Optional[int] = Field(None, description="Filtrar por categoría (opcional)")
+    limite: Optional[int] = Field(10, ge=1, le=50, description="Número máximo de resultados")
+
+class BusquedaCompletaRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=100, description="Término de búsqueda")
+    categoria_id: Optional[int] = Field(None, description="Filtrar por categoría")
+    desarrollador_id: Optional[int] = Field(None, description="Filtrar por desarrollador")
+    precio_min: Optional[float] = Field(None, ge=0, description="Precio mínimo")
+    precio_max: Optional[float] = Field(None, ge=0, description="Precio máximo")
+    rango_edad: Optional[str] = Field(None, description="Filtrar por rango de edad")
+    limite: Optional[int] = Field(20, ge=1, le=100, description="Número máximo de resultados")
+
+# ============================
+# 📊 ESTADÍSTICAS (para inputs si necesitas)
+# ============================
+class EstadisticasRequest(BaseModel):
+    fecha_inicio: Optional[date] = Field(None, description="Fecha de inicio para filtrar")
+    fecha_fin: Optional[date] = Field(None, description="Fecha de fin para filtrar")
+    limite: Optional[int] = Field(10, ge=1, le=50, description="Número de resultados")
+
+# ============================
+# 🎯 DESCUBRIMIENTO (para inputs si necesitas)
+# ============================
+class RecomendacionRequest(BaseModel):
+    usuario_id: int = Field(..., description="ID del usuario para recomendar")
+    limite: Optional[int] = Field(10, ge=1, le=20, description="Número de recomendaciones")
+    incluir_instaladas: Optional[bool] = Field(False, description="Incluir apps ya instaladas")

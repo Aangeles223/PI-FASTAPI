@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Seccion
-from schemas import SeccionCreate, SeccionOut
+from schemas import SeccionOut
 from datetime import datetime
+from typing import Optional
 
 router = APIRouter()
 
@@ -19,33 +20,37 @@ def obtener_seccion(id_seccion: int, db: Session = Depends(get_db)):
     return seccion
 
 @router.post("/secciones", response_model=SeccionOut)
-def crear_seccion(seccion: SeccionCreate, db: Session = Depends(get_db)):
-    nueva = Seccion(
-        nombre=seccion.nombre,
-        descripcion=seccion.descripcion,
-        fecha_creacion=datetime.now()
-    )
-    db.add(nueva)
-    db.commit()
-    db.refresh(nueva)
+def crear_seccion(
+    nombre: str = Query(..., min_length=2, max_length=100, description="Nombre de la sección"),
+    descripcion: Optional[str] = Query(None, max_length=500, description="Descripción opcional"),
+    db: Session = Depends(get_db)
+):
+    nueva = Seccion(nombre=nombre, descripcion=descripcion, fecha_creacion=datetime.now())
+    db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
 
 @router.put("/secciones/{id_seccion}", response_model=SeccionOut)
-def actualizar_seccion(id_seccion: int, seccion_update: SeccionCreate, db: Session = Depends(get_db)):
+def actualizar_seccion(
+    id_seccion: int = Path(..., description="ID de la sección a actualizar"),
+    nombre: str = Query(..., min_length=2, max_length=100, description="Nuevo nombre"),
+    descripcion: Optional[str] = Query(None, max_length=500, description="Nueva descripción"),
+    db: Session = Depends(get_db)
+):
     seccion = db.query(Seccion).filter(Seccion.id_seccion == id_seccion).first()
     if not seccion:
         raise HTTPException(status_code=404, detail="Sección no encontrada")
-    seccion.nombre = seccion_update.nombre
-    seccion.descripcion = seccion_update.descripcion
-    db.commit()
-    db.refresh(seccion)
+    seccion.nombre = nombre
+    seccion.descripcion = descripcion
+    db.commit(); db.refresh(seccion)
     return seccion
 
 @router.delete("/secciones/{id_seccion}")
-def eliminar_seccion(id_seccion: int, db: Session = Depends(get_db)):
+def eliminar_seccion(
+    id_seccion: int = Path(..., description="ID de la sección a eliminar"),
+    db: Session = Depends(get_db)
+):
     seccion = db.query(Seccion).filter(Seccion.id_seccion == id_seccion).first()
     if not seccion:
         raise HTTPException(status_code=404, detail="Sección no encontrada")
-    db.delete(seccion)
-    db.commit()
+    db.delete(seccion); db.commit()
     return {"mensaje": "Sección eliminada correctamente"}

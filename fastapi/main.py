@@ -1,26 +1,8 @@
 from fastapi import FastAPI
-app = FastAPI()
 
 app = FastAPI(
     title="Lana App Store API",
-    description="""
-📱 **Lana App Store API**
-
-Bienvenido a la API oficial de Lana App, una plataforma tipo Play Store donde los usuarios pueden:
-
-🔹 Explorar aplicaciones  
-🔹 Descargar e instalar apps  
-🔹 Valorar y comentar sus experiencias  
-🔹 Ver el historial de versiones  
-🔹 Recibir notificaciones importantes
-
-Además, los desarrolladores pueden gestionar sus propias apps y lanzamientos.
-
-Esta API es el backend central para la app móvil, conectada con una base de datos MySQL.
-""",
 )
-
-# Importa las rutas de los módulos
 
 #USUARIOS
 from routers import usuarios
@@ -28,7 +10,7 @@ app.include_router(usuarios.router, tags=["Usuarios"])
 
 #STATUS
 from routers import status
-app.include_router(status.routerStatus)
+app.include_router(status.router, tags=["Status"])
 
 #SECCIONES
 from routers import seccion
@@ -47,12 +29,9 @@ from routers import aplicacion
 app.include_router(aplicacion.router, prefix="/app", tags=["App"])
 
 #APLICACIONES CATEGORÍAS
-from routers import aplicacion_categorias
-app.include_router(aplicacion_categorias.router, prefix="/app-categorias", tags=["App-Categorías"])
-
-#APLICACIONES SECCIÓN
-from routers import app_seccion
-app.include_router(app_seccion.router, prefix="/app-seccion", tags=["App-Sección"])
+from routers import aplicacion_categorias, app_seccion
+app.include_router(aplicacion_categorias.router, prefix="/api/app-categorias", tags=["App-Categorías"])
+app.include_router(app_seccion.router, prefix="/api/app-secciones", tags=["App-Secciones"])
 
 #APLICACIONES DESARROLLADOR
 from routers import apps_desarrollador
@@ -75,6 +54,15 @@ from routers import valoracion
 app.include_router(valoracion.router, prefix="/api", tags=["Valoraciones"])
 
 #VERSIÓN
-from routers import version_app  # asegúrate de tener __init__.py en routers
-app.include_router(version_app.router, prefix="/api", tags=["Version App"])
+from routers import version_app
+app.include_router(version_app.router, prefix="/api", tags=["Versiones"])
 
+# Temporalmente comentados hasta crear los archivos
+from routers import busqueda
+app.include_router(busqueda.router, prefix="/api", tags=["Búsqueda"])
+
+from routers import estadisticas
+app.include_router(estadisticas.router, prefix="/api", tags=["Estadísticas"])
+
+from routers import descubrimiento
+app.include_router(descubrimiento.router, prefix="/api", tags=["Descubrimiento"])

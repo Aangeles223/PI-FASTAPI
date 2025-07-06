@@ -74,28 +74,28 @@ class App(Base):
 # APPS CATEGORÍAS
 class AppCategoria(Base):
     __tablename__ = "app_categorias"
-    app_id_app = Column(Integer, ForeignKey('app.id_app'), primary_key=True)
-    categorias_id = Column(Integer, ForeignKey('categorias.id'), primary_key=True)
-# APPS CATEGORÍAS
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    app_id_app = Column(Integer, ForeignKey("app.id_app"), nullable=False)
+    categorias_id = Column(Integer, ForeignKey("categorias.id"), nullable=False)
 
-
-# APPS SECCIÓN
 class AppSeccion(Base):
     __tablename__ = "app_seccion"
-
-    id_app = Column(Integer, ForeignKey("app.id_app"), primary_key=True)
-    id_seccion = Column(Integer, ForeignKey('seccion.id_seccion')) 
-    prioridad = Column(SmallInteger)
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_app = Column(Integer, ForeignKey("app.id_app"), nullable=False)
+    id_seccion = Column(Integer, ForeignKey("seccion.id_seccion"), nullable=False)
+    prioridad = Column(Integer, default=0)
 # APPS SECCIÓN
 
 
 # APPS DESARROLLADOR
 class AppsDesarrollador(Base):
     __tablename__ = "apps_desarrollador"
-
+    
     id = Column(Integer, primary_key=True, autoincrement=True)
-    desarrollador_id_desarrollador = Column(Integer, ForeignKey("desarrollador.id_desarrollador"))
-    app_id_app = Column(Integer, ForeignKey("app.id_app"))
+    desarrollador_id_desarrollador = Column(Integer, ForeignKey("desarrollador.id_desarrollador"), nullable=False)
+    app_id_app = Column(Integer, ForeignKey("app.id_app"), nullable=False)
 # APPS DESARROLLADOR
 
 

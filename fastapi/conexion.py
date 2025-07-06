@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Configura tus datos reales
 USER = "root"
-PASSWORD = "Master12$"
+PASSWORD = "angel820"
 HOST = "localhost"
 PORT = "3306"
 DB_NAME = "devplay"
