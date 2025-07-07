@@ -84,16 +84,3 @@ def eliminar_relacion(relacion_id: int, db: Session = Depends(get_db)):
     db.delete(relacion)
     db.commit()
     return {"mensaje": "Relación eliminada correctamente"}
-
-@router.delete("/app/{app_id}/categoria/{categoria_id}")
-def eliminar_relacion_por_ids(app_id: int, categoria_id: int, db: Session = Depends(get_db)):
-    relacion = db.query(AppCategoria).filter_by(
-        app_id_app=app_id,
-        categorias_id=categoria_id
-    ).first()
-    if not relacion:
-        raise HTTPException(status_code=404, detail="Relación no encontrada")
-    
-    db.delete(relacion)
-    db.commit()
-    return {"mensaje": "Relación eliminada correctamente"}
