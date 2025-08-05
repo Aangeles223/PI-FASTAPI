@@ -9,14 +9,13 @@ from .usuarios import obtener_usuario_actual  # ← Importar función de autenti
 
 router = APIRouter()
 
-@router.get("/descargas", response_model=list[DescargaOut])
+@router.get("/", response_model=list[DescargaOut])
 def obtener_descargas(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)  # ← Requiere autenticación
+    db: Session = Depends(get_db)
 ):
     return db.query(Descarga).all()
 
-@router.post("/descargas", response_model=DescargaOut)
+@router.post("/", response_model=DescargaOut)
 def crear_descarga(
     id_app: int = Query(..., description="ID de la aplicación"),
     fecha: Optional[date] = Query(None, description="Fecha de descarga (auto si se omite)"),
@@ -32,7 +31,7 @@ def crear_descarga(
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
 
-@router.put("/descargas/{id_descarga}", response_model=DescargaOut)
+@router.put("/{id_descarga}", response_model=DescargaOut)
 def actualizar_descarga(
     id_descarga: int = Path(..., description="ID de la descarga a actualizar"),
     id_app: int = Query(..., description="Nuevo ID de aplicación"),
@@ -51,7 +50,7 @@ def actualizar_descarga(
     db.commit(); db.refresh(descarga_db)
     return descarga_db
 
-@router.delete("/descargas/{id_descarga}")
+@router.delete("/{id_descarga}")
 def eliminar_descarga(
     id_descarga: int = Path(..., description="ID de la descarga a eliminar"),
     db: Session = Depends(get_db),

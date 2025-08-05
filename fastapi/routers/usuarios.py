@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body
 from typing import Optional
 from pydantic import BaseModel, EmailStr
 from starlette import status as http_status
@@ -7,10 +7,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Usuario
-from schemas import UsuarioOut
+from schemas import UsuarioOut, UsuarioUpdate
 from passlib.context import CryptContext
 from jose import jwt, JWTError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "clave-secreta-ultra-segura"
@@ -46,24 +46,34 @@ def obtener_usuario_actual(
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
-@router.post("/usuarios", response_model=UsuarioOut)
+@router.post("/", response_model=UsuarioOut)
 def crear_usuario(
     nombre: str = Query(..., min_length=2, max_length=45, description="Nombre del usuario"),
     correo: EmailStr = Query(..., description="Correo electrónico"),
     contraseña: str = Query(..., min_length=6, max_length=50, description="Contraseña"),
     status_id: int = Query(1, description="Status ID (1=Activo)"),
+    telefono: Optional[str] = Query(None, max_length=20, description="Teléfono (opcional)"),
+    pais_id: Optional[int] = Query(None, description="ID de país (opcional)"),
+    direccion: Optional[str] = Query(None, max_length=100, description="Dirección (opcional)"),
+    genero_id: Optional[int] = Query(None, description="ID de género (opcional)"),
+    fecha_nacimiento: Optional[date] = Query(None, description="Fecha de nacimiento (opcional)"),
     db: Session = Depends(get_db)
 ):
     if db.query(Usuario).filter(Usuario.correo == correo).first():
         raise HTTPException(400, "Correo ya registrado")
     hashed = pwd_context.hash(contraseña)
     u = Usuario(
-        nombre=nombre, 
-        correo=correo, 
+        nombre=nombre,
+        correo=correo,
         contraseña=hashed,
-        status_id=status_id, 
-        avatar=b"", 
-        fecha_creacion=datetime.now()
+        status_id=status_id,
+        avatar=b"",
+        fecha_creacion=datetime.now(),
+        telefono=telefono,
+        pais_id=pais_id,
+        direccion=direccion,
+        genero_id=genero_id,
+        fecha_nacimiento=fecha_nacimiento
     )
     db.add(u); db.commit(); db.refresh(u)
     return u
@@ -76,28 +86,26 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     token = crear_token({"sub": usuario.correo})
     return {"access_token": token, "token_type": "bearer"}
 
-@router.put("/usuarios/{id}", response_model=UsuarioOut)
+# Refactorizar endpoint PUT para recibir body en lugar de query
+@router.put("/{id}", response_model=UsuarioOut)
 def actualizar_usuario(
     id: int = Path(..., ge=1, description="ID del usuario a actualizar"),
-    nombre: str = Query(..., min_length=2, max_length=45, description="Nuevo nombre"),
-    correo: EmailStr = Query(..., description="Nuevo correo"),
-    contraseña: Optional[str] = Query(None, min_length=6, max_length=50, description="Nueva contraseña (opcional)"),
-    status_id: int = Query(..., description="Nuevo status ID"),
+    datos: UsuarioUpdate = Body(...),
     db: Session = Depends(get_db),
     token=Depends(security)
 ):
     u = db.query(Usuario).get(id)
-    if not u: 
+    if not u:
         raise HTTPException(404, "Usuario no encontrado")
-    u.nombre = nombre
-    u.correo = correo
-    u.status_id = status_id
-    if contraseña:
-        u.contraseña = pwd_context.hash(contraseña)
+    update_data = datos.dict(exclude_unset=True)
+    if "contraseña" in update_data:
+        update_data["contraseña"] = pwd_context.hash(update_data["contraseña"])
+    for campo, valor in update_data.items():
+        setattr(u, campo, valor)
     db.commit(); db.refresh(u)
     return u
 
-@router.delete("/usuarios/{id}")
+@router.delete("/{id}")
 def eliminar_usuario(
     id: int = Path(..., ge=1, description="ID del usuario a eliminar"),
     db: Session = Depends(get_db),
@@ -109,13 +117,26 @@ def eliminar_usuario(
     db.delete(u); db.commit()
     return {"mensaje": "Usuario eliminado"}
 
-@router.get("/usuarios", response_model=list[UsuarioOut])
+@router.get("/", response_model=list[UsuarioOut])
 def obtener_usuarios(db: Session = Depends(get_db)):
     return db.query(Usuario).all()
 
-@router.get("/usuarios/me", response_model=UsuarioOut)
+@router.get("/me", response_model=UsuarioOut)
 def leer_usuario_actual(usuario: Usuario = Depends(obtener_usuario_actual)):
     return usuario
 
-# ...resto de endpoints GET igual...
+# Añadir endpoint PUT /me para actualizar perfil actual
+@router.put("/me", response_model=UsuarioOut)
+def actualizar_mi_usuario(
+    datos: UsuarioUpdate = Body(...),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db)
+):
+    update_data = datos.dict(exclude_unset=True)
+    if "contraseña" in update_data:
+        update_data["contraseña"] = pwd_context.hash(update_data["contraseña"])
+    for campo, valor in update_data.items():
+        setattr(usuario_actual, campo, valor)
+    db.commit(); db.refresh(usuario_actual)
+    return usuario_actual
 

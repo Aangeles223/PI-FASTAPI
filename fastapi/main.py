@@ -1,12 +1,32 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title="Lana App Store API",
 )
 
+# Ajustar CORS y prefix de usuarios
+origins = [
+    "http://localhost:19006",  # Expo Go
+    "http://localhost:8081",   # Metro bundler
+    "http://localhost:8000",   # si pruebas en web
+]
+# Añadir allow_credentials para que headers de autorización pasen correctamente
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
+
 #USUARIOS
 from routers import usuarios
-app.include_router(usuarios.router, tags=["Usuarios"])
+app.include_router(
+    usuarios.router,
+    prefix="/usuarios",
+    tags=["Usuarios"]
+)
 
 #STATUS
 from routers import status
@@ -20,13 +40,21 @@ app.include_router(seccion.router, prefix="/secciones", tags=["Secciones"])
 from routers import categorias
 app.include_router(categorias.router, prefix="/categorias", tags=["Categorías"])
 
+# PAÍSES
+from routers import paises
+app.include_router(paises.router, prefix="/paises", tags=["Países"])
+
+# GÉNEROS
+from routers import generos
+app.include_router(generos.router, prefix="/generos", tags=["Géneros"])
+
 #DESARROLLADORES
 from routers import desarrollador
 app.include_router(desarrollador.router, prefix="/desarrolladores", tags=["Desarrolladores"])
 
 #APLICACIONES
 from routers import aplicacion
-app.include_router(aplicacion.router, prefix="/app", tags=["App"])
+app.include_router(aplicacion.router, prefix="/apps", tags=["Apps"])
 
 #APLICACIONES CATEGORÍAS
 from routers import aplicacion_categorias, app_seccion
@@ -39,7 +67,7 @@ app.include_router(apps_desarrollador.router, prefix="/apps-desarrollador", tags
 
 #APLICACIONES DESCARGAS
 from routers import descargas
-app.include_router(descargas.router, prefix="/api", tags=["Descarga"])
+app.include_router(descargas.router, prefix="/descargas", tags=["Descarga"])
 
 #MIS APPS
 from routers import mis_apps

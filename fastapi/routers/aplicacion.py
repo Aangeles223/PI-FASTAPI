@@ -32,7 +32,7 @@ def validar_y_decodificar_base64(cadena_base64: Optional[str]) -> bytes:
         return b""
 
 # Crear app
-@router.post("/apps", response_model=AppOut)
+@router.post("/", response_model=AppOut)
 def crear_app(
     nombre: str = Query(..., min_length=2, max_length=150, description="Nombre de la aplicación"),
     precio: str = Query(..., description="Precio (usar '0' para gratis)"),
@@ -64,12 +64,12 @@ def crear_app(
     return nueva
 
 # Obtener todas las apps
-@router.get("/apps", response_model=list[AppOut])
+@router.get("/", response_model=list[AppOut])
 def obtener_apps(db: Session = Depends(get_db)):
     return db.query(App).all()
 
 # Actualizar una app por ID
-@router.put("/apps/{id_app}", response_model=AppOut)
+@router.put("/{id_app}", response_model=AppOut)
 def actualizar_app(
     id_app: int = Path(..., description="ID de la app a actualizar"),
     nombre: str = Query(..., min_length=2, max_length=150, description="Nuevo nombre"),
@@ -96,7 +96,7 @@ def actualizar_app(
     return existente
 
 # Eliminar una app por ID
-@router.delete("/apps/{id_app}")
+@router.delete("/{id_app}")
 def eliminar_app(
     id_app: int = Path(..., description="ID de la app a eliminar"),
     db: Session = Depends(get_db)

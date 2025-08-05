@@ -7,18 +7,18 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.get("/categorias", response_model=list[CategoriaOut])
+@router.get("/", response_model=list[CategoriaOut])
 def obtener_categorias(db: Session = Depends(get_db)):
     return db.query(Categoria).all()
 
-@router.get("/categorias/{id}", response_model=CategoriaOut)
+@router.get("/{id}", response_model=CategoriaOut)
 def obtener_categoria(id: int, db: Session = Depends(get_db)):
     categoria = db.query(Categoria).filter(Categoria.id == id).first()
     if not categoria:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
     return categoria
 
-@router.post("/categorias", response_model=CategoriaOut)
+@router.post("/", response_model=CategoriaOut)
 def crear_categoria(
     nombre: str = Query(..., min_length=2, max_length=45, description="Nombre de la categoría"),
     db: Session = Depends(get_db)
@@ -27,7 +27,7 @@ def crear_categoria(
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
 
-@router.put("/categorias/{id}", response_model=CategoriaOut)
+@router.put("/{id}", response_model=CategoriaOut)
 def actualizar_categoria(
     id: int = Path(..., description="ID de la categoría a actualizar"),
     nombre: str = Query(..., min_length=2, max_length=45, description="Nuevo nombre"),
@@ -40,7 +40,7 @@ def actualizar_categoria(
     db.commit(); db.refresh(categoria)
     return categoria
 
-@router.delete("/categorias/{id}")
+@router.delete("/{id}")
 def eliminar_categoria(
     id: int = Path(..., description="ID de la categoría a eliminar"),
     db: Session = Depends(get_db)

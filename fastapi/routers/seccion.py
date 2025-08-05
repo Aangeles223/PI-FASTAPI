@@ -8,18 +8,18 @@ from typing import Optional
 
 router = APIRouter()
 
-@router.get("/secciones", response_model=list[SeccionOut])
+@router.get("/", response_model=list[SeccionOut])
 def obtener_secciones(db: Session = Depends(get_db)):
     return db.query(Seccion).all()
 
-@router.get("/secciones/{id_seccion}", response_model=SeccionOut)
+@router.get("/{id_seccion}", response_model=SeccionOut)
 def obtener_seccion(id_seccion: int, db: Session = Depends(get_db)):
     seccion = db.query(Seccion).filter(Seccion.id_seccion == id_seccion).first()
     if not seccion:
         raise HTTPException(status_code=404, detail="Sección no encontrada")
     return seccion
 
-@router.post("/secciones", response_model=SeccionOut)
+@router.post("/", response_model=SeccionOut)
 def crear_seccion(
     nombre: str = Query(..., min_length=2, max_length=100, description="Nombre de la sección"),
     descripcion: Optional[str] = Query(None, max_length=500, description="Descripción opcional"),
@@ -29,7 +29,7 @@ def crear_seccion(
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
 
-@router.put("/secciones/{id_seccion}", response_model=SeccionOut)
+@router.put("/{id_seccion}", response_model=SeccionOut)
 def actualizar_seccion(
     id_seccion: int = Path(..., description="ID de la sección a actualizar"),
     nombre: str = Query(..., min_length=2, max_length=100, description="Nuevo nombre"),
@@ -44,7 +44,7 @@ def actualizar_seccion(
     db.commit(); db.refresh(seccion)
     return seccion
 
-@router.delete("/secciones/{id_seccion}")
+@router.delete("/{id_seccion}")
 def eliminar_seccion(
     id_seccion: int = Path(..., description="ID de la sección a eliminar"),
     db: Session = Depends(get_db)

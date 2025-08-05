@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+import base64
 from datetime import datetime, date
 from typing import Optional
 
@@ -12,6 +13,11 @@ class UsuarioCreate(BaseModel):
     contraseña: str = Field(..., min_length=6, max_length=50, description="Contraseña (mínimo 6 caracteres)")
     status_id: int = Field(default=1, description="1=Activo, 2=Inactivo, 3=Suspendido")
     avatar: bytes = Field(default=b"", description="Imagen de perfil (opcional)")
+    telefono: Optional[str] = Field(None, max_length=20, description="Teléfono del usuario (opcional)")
+    pais_id: Optional[int] = Field(None, description="ID del país (opcional)")
+    direccion: Optional[str] = Field(None, max_length=100, description="Dirección del usuario (opcional)")
+    genero_id: Optional[int] = Field(None, description="ID del género (opcional)")
+    fecha_nacimiento: Optional[date] = Field(None, description="Fecha de nacimiento (opcional)")
 
 
 class UsuarioOut(BaseModel):
@@ -20,6 +26,26 @@ class UsuarioOut(BaseModel):
     correo: str
     fecha_creacion: datetime
     status_id: int
+    telefono: Optional[str]
+    pais_id: Optional[int]
+    direccion: Optional[str]
+    genero_id: Optional[int]
+    fecha_nacimiento: Optional[date]
+
+    class Config:
+        from_attributes = True
+
+
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, min_length=2, max_length=45, description="Nombre completo del usuario")
+    correo: Optional[EmailStr] = Field(None, description="Correo electrónico válido")
+    contraseña: Optional[str] = Field(None, min_length=6, max_length=50, description="Contraseña (mínimo 6 caracteres)")
+    status_id: Optional[int] = Field(None, description="Status ID (1=Activo, 2=Inactivo, 3=Suspendido)")
+    telefono: Optional[str] = Field(None, max_length=20, description="Teléfono del usuario (opcional)")
+    pais_id: Optional[int] = Field(None, description="ID del país (opcional)")
+    direccion: Optional[str] = Field(None, max_length=100, description="Dirección del usuario (opcional)")
+    genero_id: Optional[int] = Field(None, description="ID del género (opcional)")
+    fecha_nacimiento: Optional[date] = Field(None, description="Fecha de nacimiento (opcional)")
 
     class Config:
         from_attributes = True
@@ -94,6 +120,32 @@ class DesarrolladorOut(BaseModel):
 
     class Config:
         from_attributes = True
+        
+# ============================
+# 🌍 PAISES
+# ============================
+class PaisCreate(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=100, description="Nombre del país")
+
+class PaisOut(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
+
+# ============================
+# 🚻 GENEROS
+# ============================
+class GeneroCreate(BaseModel):
+    nombre: str = Field(..., min_length=1, max_length=50, description="Nombre del género")
+
+class GeneroOut(BaseModel):
+    id: int
+    nombre: str
+
+    class Config:
+        from_attributes = True
 
 
 # ============================
@@ -111,6 +163,11 @@ class AppCreate(BaseModel):
     rango_edad: str = Field(..., description="Ej: 3+, 7+, 12+, 17+")
     peso: str = Field(..., description="Tamaño de la app (Ej: 50MB)")
     status_id: int = Field(default=1, description="1=Activo, 2=Inactivo, 3=Suspendido")
+    is_free: bool = Field(default=False, description="¿Gratis?")
+    is_premium: bool = Field(default=False, description="¿Premium?")
+    is_on_sale: bool = Field(default=False, description="¿En oferta?")
+    is_multiplayer: bool = Field(default=False, description="¿Multijugador?")
+    is_offline: bool = Field(default=False, description="¿Offline?")
 
 
 class AppOut(BaseModel):
@@ -127,9 +184,15 @@ class AppOut(BaseModel):
     peso: str
     fecha_creacion: datetime
     status_id: int
+    is_free: bool = False
+    is_premium: bool = False
+    is_on_sale: bool = False
+    is_multiplayer: bool = False
+    is_offline: bool = False
 
     class Config:
         from_attributes = True
+        json_encoders = {bytes: lambda v: base64.b64encode(v).decode('utf-8') if v is not None else None}
 
 
 # ============================

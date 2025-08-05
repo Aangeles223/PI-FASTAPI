@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, LargeBinary, Text, DateTime, SmallInteger, BigInteger, Date
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, LargeBinary, Text, DateTime, SmallInteger, BigInteger, Date, Boolean
 from conexion import Base
 from sqlalchemy.dialects.mysql import BIGINT 
 from datetime import datetime
@@ -14,9 +14,15 @@ class Usuario(Base):
     contraseña = Column(String(50), nullable=False)
     fecha_creacion = Column(DateTime, nullable=False)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
+    telefono = Column(String(20), nullable=True)
+    pais_id = Column(Integer, ForeignKey("paises.id"), nullable=True)
+    direccion = Column(String(100), nullable=True)
+    genero_id = Column(Integer, ForeignKey("generos.id"), nullable=True)
+    fecha_nacimiento = Column(Date, nullable=True)
 #USUARIOS
 
 
+#STATUS
 #STATUS
 class Status(Base):
     __tablename__ = "status"
@@ -69,6 +75,18 @@ class App(Base):
     fecha_creacion = Column(DateTime, default=datetime.now)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
 # APPS
+
+# 🌍 Países
+class Pais(Base):
+    __tablename__ = "paises"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(100), nullable=False)
+
+# 🚻 Géneros
+class Genero(Base):
+    __tablename__ = "generos"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(50), nullable=False)
 
 
 # APPS CATEGORÍAS
