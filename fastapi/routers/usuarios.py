@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Body
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from starlette import status as http_status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Usuario
@@ -15,7 +13,6 @@ from datetime import datetime, timedelta, date
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "clave-secreta-ultra-segura"
 ALGORITHM = "HS256"
-security = HTTPBearer()
 
 router = APIRouter()
 
@@ -26,25 +23,10 @@ def crear_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 class LoginRequest(BaseModel):
     correo: EmailStr
-    contraseña: str
+    contrasena: str = Field(..., alias="contraseña")
 
-def obtener_usuario_actual(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        correo: str = payload.get("sub")
-        if correo is None:
-            raise HTTPException(status_code=401, detail="Token inválido")
-        
-        usuario = db.query(Usuario).filter(Usuario.correo == correo).first()
-        if usuario is None:
-            raise HTTPException(status_code=401, detail="Usuario no encontrado")
-        
-        return usuario
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido")
+    model_config = ConfigDict(populate_by_name=True)
+
 
 @router.post("/", response_model=UsuarioOut)
 def crear_usuario(
@@ -81,7 +63,7 @@ def crear_usuario(
 @router.post("/token")
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     usuario = db.query(Usuario).filter(Usuario.correo == login_data.correo).first()
-    if not usuario or not pwd_context.verify(login_data.contraseña, usuario.contraseña):
+    if not usuario or not pwd_context.verify(login_data.contrasena, usuario.contraseña):
         raise HTTPException(401, "Credenciales incorrectas")
     token = crear_token({"sub": usuario.correo})
     return {"access_token": token, "token_type": "bearer"}
@@ -91,8 +73,7 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
 def actualizar_usuario(
     id: int = Path(..., ge=1, description="ID del usuario a actualizar"),
     datos: UsuarioUpdate = Body(...),
-    db: Session = Depends(get_db),
-    token=Depends(security)
+    db: Session = Depends(get_db)
 ):
     u = db.query(Usuario).get(id)
     if not u:
@@ -108,8 +89,7 @@ def actualizar_usuario(
 @router.delete("/{id}")
 def eliminar_usuario(
     id: int = Path(..., ge=1, description="ID del usuario a eliminar"),
-    db: Session = Depends(get_db),
-    token=Depends(security)
+    db: Session = Depends(get_db)
 ):
     u = db.query(Usuario).get(id)
     if not u: 
@@ -122,21 +102,30 @@ def obtener_usuarios(db: Session = Depends(get_db)):
     return db.query(Usuario).all()
 
 @router.get("/me", response_model=UsuarioOut)
-def leer_usuario_actual(usuario: Usuario = Depends(obtener_usuario_actual)):
-    return usuario
+def leer_usuario_actual(
+    id: int = Query(..., ge=1, description="ID del usuario a obtener"),
+    db: Session = Depends(get_db)
+):
+    u = db.query(Usuario).get(id)
+    if not u:
+        raise HTTPException(404, "Usuario no encontrado")
+    return u
 
 # Añadir endpoint PUT /me para actualizar perfil actual
 @router.put("/me", response_model=UsuarioOut)
 def actualizar_mi_usuario(
+    id: int = Query(..., ge=1, description="ID del usuario a actualizar"),
     datos: UsuarioUpdate = Body(...),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
+    u = db.query(Usuario).get(id)
+    if not u:
+        raise HTTPException(404, "Usuario no encontrado")
     update_data = datos.dict(exclude_unset=True)
     if "contraseña" in update_data:
         update_data["contraseña"] = pwd_context.hash(update_data["contraseña"])
     for campo, valor in update_data.items():
-        setattr(usuario_actual, campo, valor)
-    db.commit(); db.refresh(usuario_actual)
-    return usuario_actual
+        setattr(u, campo, valor)
+    db.commit(); db.refresh(u)
+    return u
 

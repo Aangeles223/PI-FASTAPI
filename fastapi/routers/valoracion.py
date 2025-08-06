@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
-from models import Valoracion, Usuario
+from models import Valoracion
 from schemas import ValoracionOut
 from datetime import datetime
 from conexion import get_db
-from .usuarios import obtener_usuario_actual
 from typing import Optional
 
 router = APIRouter()
@@ -36,10 +35,9 @@ def crear_valoracion(
 
 @router.get("/valoraciones", response_model=list[ValoracionOut])
 def obtener_valoraciones(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
-    return db.query(Valoracion).filter(Valoracion.usuario_id == usuario_actual.id).all()
+    return db.query(Valoracion).all()
 
 @router.put("/valoraciones/{id_valoracion}", response_model=ValoracionOut)
 def actualizar_valoracion(
@@ -48,18 +46,13 @@ def actualizar_valoracion(
     puntuacion: int = Query(..., ge=1, le=5, description="Nueva puntuación"),
     comentario: Optional[str] = Query(None, max_length=500, description="Nuevo comentario"),
     usuario_id: int = Query(..., description="Nuevo ID de usuario"),
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
     valoracion_db = db.query(Valoracion).filter(Valoracion.id_valoracion == id_valoracion).first()
     if not valoracion_db:
         raise HTTPException(status_code=404, detail="Valoración no encontrada")
 
-    if valoracion_db.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para modificar esta valoración")
-    
-    if usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para asignar valoraciones a otro usuario")
+    # Removed authentication checks
 
     valoracion_db.id_app = id_app
     valoracion_db.puntuacion = puntuacion
@@ -72,15 +65,13 @@ def actualizar_valoracion(
 @router.delete("/valoraciones/{id_valoracion}")
 def eliminar_valoracion(
     id_valoracion: int = Path(..., description="ID de la valoración a eliminar"),
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
     valoracion = db.query(Valoracion).filter(Valoracion.id_valoracion == id_valoracion).first()
     if not valoracion:
         raise HTTPException(status_code=404, detail="Valoración no encontrada")
     
-    if valoracion.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para eliminar esta valoración")
+    # Removed authentication check
     
     db.delete(valoracion); db.commit()
     return {"mensaje": "Valoración eliminada correctamente"}

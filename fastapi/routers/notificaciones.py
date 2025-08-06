@@ -1,21 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import Notificacion, Usuario
+from models import Notificacion
 from schemas import NotificacionCreate, NotificacionOut
 from datetime import datetime
 from conexion import get_db
-from .usuarios import obtener_usuario_actual
 
 router = APIRouter()
 
 @router.post("/notificaciones", response_model=NotificacionOut)
 def crear_notificacion(
-    notificacion: NotificacionCreate, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    notificacion: NotificacionCreate,
+    db: Session = Depends(get_db)
 ):
-    if notificacion.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para crear notificaciones para otro usuario")
+    # Removed authentication check
     
     nueva = Notificacion(
         descripcion=notificacion.descripcion,
@@ -30,27 +27,21 @@ def crear_notificacion(
 
 @router.get("/notificaciones", response_model=list[NotificacionOut])
 def obtener_notificaciones(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
-    return db.query(Notificacion).filter(Notificacion.usuario_id == usuario_actual.id).all()
+    return db.query(Notificacion).all()
 
 @router.put("/notificaciones/{id}", response_model=NotificacionOut)
 def actualizar_notificacion(
-    id: int, 
-    datos: NotificacionCreate, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    id: int,
+    datos: NotificacionCreate,
+    db: Session = Depends(get_db)
 ):
     notificacion_db = db.query(Notificacion).filter(Notificacion.id == id).first()
     if not notificacion_db:
         raise HTTPException(status_code=404, detail="Notificación no encontrada")
 
-    if notificacion_db.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para modificar esta notificación")
-    
-    if datos.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para asignar notificaciones a otro usuario")
+    # Removed authentication checks
 
     notificacion_db.descripcion = datos.descripcion
     notificacion_db.usuario_id = datos.usuario_id
@@ -61,16 +52,14 @@ def actualizar_notificacion(
 
 @router.delete("/notificaciones/{id}")
 def eliminar_notificacion(
-    id: int, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    id: int,
+    db: Session = Depends(get_db)
 ):
     notificacion = db.query(Notificacion).filter(Notificacion.id == id).first()
     if not notificacion:
         raise HTTPException(status_code=404, detail="Notificación no encontrada")
     
-    if notificacion.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para eliminar esta notificación")
+    # Removed authentication check
     
     db.delete(notificacion)
     db.commit()

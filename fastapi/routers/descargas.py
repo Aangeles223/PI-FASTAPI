@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from .auth_utils import get_current_user
 from sqlalchemy.orm import Session
 from conexion import get_db
 from models import Descarga, Usuario
 from schemas import DescargaOut
 from datetime import date
 from typing import Optional
-from .usuarios import obtener_usuario_actual  # ← Importar función de autenticación
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ def crear_descarga(
     fecha: Optional[date] = Query(None, description="Fecha de descarga (auto si se omite)"),
     cantidad: int = Query(1, ge=1, description="Número de descargas"),
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)  # ← Requiere autenticación
+    usuario: Usuario = Depends(get_current_user)
 ):
     nueva = Descarga(
         id_app=id_app,
@@ -38,7 +38,7 @@ def actualizar_descarga(
     fecha: Optional[date] = Query(None, description="Nueva fecha"),
     cantidad: int = Query(..., ge=1, description="Nueva cantidad"),
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)  # ← Requiere autenticación
+    usuario: Usuario = Depends(get_current_user)
 ):
     descarga_db = db.query(Descarga).filter_by(id_descarga=id_descarga).first()
     if not descarga_db:
@@ -54,7 +54,7 @@ def actualizar_descarga(
 def eliminar_descarga(
     id_descarga: int = Path(..., description="ID de la descarga a eliminar"),
     db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)  # ← Requiere autenticación
+    usuario: Usuario = Depends(get_current_user)
 ):
     descarga = db.query(Descarga).filter_by(id_descarga=id_descarga).first()
     if not descarga:

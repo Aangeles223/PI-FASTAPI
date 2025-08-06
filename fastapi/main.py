@@ -14,10 +14,10 @@ origins = [
 # Añadir allow_credentials para que headers de autorización pasen correctamente
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # permitir todas las fuentes temporalmente
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True,
+    # allow_credentials se deshabilita temporalmente para evitar errores CORS
 )
 
 #USUARIOS
@@ -54,6 +54,7 @@ app.include_router(desarrollador.router, prefix="/desarrolladores", tags=["Desar
 
 #APLICACIONES
 from routers import aplicacion
+app.include_router(aplicacion.router, prefix="/aplicacion", tags=["Aplicacion"])
 app.include_router(aplicacion.router, prefix="/apps", tags=["Apps"])
 
 #APLICACIONES CATEGORÍAS
@@ -94,3 +95,9 @@ app.include_router(estadisticas.router, prefix="/api", tags=["Estadísticas"])
 
 from routers import descubrimiento
 app.include_router(descubrimiento.router, prefix="/api", tags=["Descubrimiento"])
+
+# Run the application with Uvicorn when executed directly
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3001, reload=True)
+# End of file

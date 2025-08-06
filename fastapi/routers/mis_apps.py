@@ -1,20 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models import MisApp, Usuario
+from models import MisApp
 from schemas import MisAppCreate, MisAppOut
 from conexion import get_db
-from .usuarios import obtener_usuario_actual
+# Removed authentication dependency import
 
 router = APIRouter()
 
 @router.post("/mis-apps", response_model=MisAppOut)
 def crear_mis_app(
-    data: MisAppCreate, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    data: MisAppCreate,
+    db: Session = Depends(get_db)
 ):
-    if data.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para agregar apps a otro usuario")
+    # Removed authentication check
     
     existe = db.query(MisApp).filter(
         MisApp.app_id_app == data.app_id_app,  # Corregido
@@ -31,27 +29,21 @@ def crear_mis_app(
 
 @router.get("/mis-apps", response_model=list[MisAppOut])
 def obtener_mis_apps(
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    db: Session = Depends(get_db)
 ):
-    return db.query(MisApp).filter(MisApp.usuario_id == usuario_actual.id).all()
+    return db.query(MisApp).all()
 
 @router.put("/mis-apps/{id}", response_model=MisAppOut)
 def actualizar_mis_app(
-    id: int, 
-    data: MisAppCreate, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    id: int,
+    data: MisAppCreate,
+    db: Session = Depends(get_db)
 ):
     registro = db.query(MisApp).filter(MisApp.id == id).first()
     if not registro:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
-    if registro.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para modificar este registro")
-    
-    if data.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para asignar apps a otro usuario")
+    # Removed authentication checks
     
     registro.app_id_app = data.app_id_app  # Corregido
     registro.usuario_id = data.usuario_id
@@ -61,16 +53,14 @@ def actualizar_mis_app(
 
 @router.delete("/mis-apps/{id}")
 def eliminar_mis_app(
-    id: int, 
-    db: Session = Depends(get_db),
-    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+    id: int,
+    db: Session = Depends(get_db)
 ):
     registro = db.query(MisApp).filter(MisApp.id == id).first()
     if not registro:
         raise HTTPException(status_code=404, detail="Registro no encontrado")
     
-    if registro.usuario_id != usuario_actual.id:
-        raise HTTPException(status_code=403, detail="No autorizado para eliminar este registro")
+    # Removed authentication check
     
     db.delete(registro)
     db.commit()

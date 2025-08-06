@@ -74,6 +74,11 @@ class App(Base):
     peso = Column(String(45), nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.now)
     status_id = Column(Integer, ForeignKey("status.id"), nullable=False)
+    is_free = Column(Boolean, default=False)
+    is_premium = Column(Boolean, default=False)
+    is_on_sale = Column(Boolean, default=False)
+    is_multiplayer = Column(Boolean, default=False)
+    is_offline = Column(Boolean, default=False)
 # APPS
 
 # 🌍 Países

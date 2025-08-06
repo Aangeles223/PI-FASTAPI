@@ -46,19 +46,36 @@ def crear_app(
     img2_base64: Optional[str] = Query(None, description="Imagen 2 en base64 válido (opcional, dejar vacío si no hay)"),
     img3_base64: Optional[str] = Query(None, description="Imagen 3 en base64 válido (opcional, dejar vacío si no hay)"),
     icono_base64: Optional[str] = Query(None, description="Ícono en base64 válido (opcional, dejar vacío si no hay)"),
+    is_free: bool = Query(False, description="¿Gratis?"),
+    is_premium: bool = Query(False, description="¿Premium?"),
+    is_on_sale: bool = Query(False, description="¿En oferta?"),
+    is_multiplayer: bool = Query(False, description="¿Multijugador?"),
+    is_offline: bool = Query(False, description="¿Offline?"),
     db: Session = Depends(get_db)
 ):
-    # Usar la función de validación:
-    img1 = validar_y_decodificar_base64(img1_base64)
-    img2 = validar_y_decodificar_base64(img2_base64)
-    img3l = validar_y_decodificar_base64(img3_base64)
-    icono = validar_y_decodificar_base64(icono_base64)
-    
+    # Procesar imágenes con menos código
+    imagenes = {
+        "img1": img1_base64,
+        "img2": img2_base64,
+        "img3l": img3_base64,
+        "icono": icono_base64
+    }
+    imagenes_decodificadas = {k: validar_y_decodificar_base64(v) for k, v in imagenes.items()}
+
     nueva = App(
         nombre=nombre, precio=precio, id_desarrollador=id_desarrollador,
-        descripcion=descripcion, img1=img1, img2=img2, img3l=img3l,
-        icono=icono, rango_edad=rango_edad, peso=peso,
-        fecha_creacion=datetime.now(), status_id=status_id
+        descripcion=descripcion,
+        img1=imagenes_decodificadas["img1"],
+        img2=imagenes_decodificadas["img2"],
+        img3l=imagenes_decodificadas["img3l"],
+        icono=imagenes_decodificadas["icono"],
+        rango_edad=rango_edad, peso=peso,
+        fecha_creacion=datetime.now(), status_id=status_id,
+        is_free=is_free,
+        is_premium=is_premium,
+        is_on_sale=is_on_sale,
+        is_multiplayer=is_multiplayer,
+        is_offline=is_offline
     )
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
